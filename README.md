@@ -69,19 +69,47 @@ The engine follows a three-stage transformation pipeline:
 
 ## High-Level Architecture
 
+The engine is structured into three distinct layers to ensure separation of concerns between physical math, user interaction, and data persistence.
+
 ```mermaid
 graph TD
-  A[main.py\nApplication / CLI] --> B[visual_acuity_engine.py\nVisualAcuityEngine]
-  B --> C[acuity_logs.csv\nCSV Logging]
-  A --> D[extract_pdf.py\nReport Export]
-  A --> E[test_*.py\nUnit Tests]
-  B --> E
-  style A fill:#f9f,stroke:#333,stroke-width:2px
-  style B fill:#bbf,stroke:#333,stroke-width:2px
-  style C fill:#bfb,stroke:#333,stroke-width:2px
-  style D fill:#ffd,stroke:#333,stroke-width:2px
-  style E fill:#eee,stroke:#333,stroke-width:2px
+    subgraph UI_Layer [User Interface & Orchestration]
+        Main[main.py: AppManager]
+    end
+
+    subgraph Logic_Layer [Core Engine & Physics]
+        Engine[visual_acuity_engine.py: VisualAcuityEngine]
+        Math[Stimulus Math & Geometry]
+    end
+
+    subgraph Data_Layer [Data & Reporting]
+        Logs[(acuity_logs.csv)]
+        PDF[extract_pdf.py: PDF Export]
+    end
+
+    subgraph Test_Layer [Verification]
+        Tests[test_*.py: Unit Tests]
+    end
+
+    Main -->|Invokes| Engine
+    Engine --- Math
+    Main -->|Writes| Logs
+    Main -->|Triggers| PDF
+    Main -.->|Verified by| Tests
+    Engine -.->|Verified by| Tests
+
+    %% Styling
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:#333;
+    classDef primary fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#333;
+    classDef secondary fill:#f3e5f5,stroke:#4a148c,stroke-width:1px,color:#333;
+    
+    class Main,Engine primary;
+    class Logs,PDF secondary;
 ```
+
+1.  **UI Layer**: Handles the OpenCV window lifecycle, keyboard input, and trial orchestration.
+2.  **Logic Layer**: Performs the high-precision translation from clinical acuity (Snellen) to physical sub-pixel coordinates.
+3.  **Data Layer**: Manages the persistent record of clinical trials and administrative report generation.
 
 ## 4. Implementation Details
 
