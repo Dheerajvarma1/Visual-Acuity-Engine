@@ -55,6 +55,34 @@ The engine follows a three-stage transformation pipeline:
 
 ---
 
+## Repository Structure of files
+
+- `acuity_logs.csv`: Sample/recorded session logs (CSV output).
+- `extract_pdf.py`: PDF extraction/ report export utility.
+- `main.py`: Application entrypoint / CLI and session orchestration.
+- `visual_acuity_engine.py`: Core engine implementing stimulus math and rendering.
+- `test_calculations.py`: Unit tests for calculation and geometry functions.
+- `test_logging.py`: Unit tests for logging, CSV output and IO.
+- `requirements.txt`: Python dependency list.
+- `README.md`: Project documentation (this file).
+- `__pycache__/`: Python bytecode cache (ignored in VCS).
+
+## High-Level Architecture
+
+```mermaid
+graph TD
+  A[main.py\nApplication / CLI] --> B[visual_acuity_engine.py\nVisualAcuityEngine]
+  B --> C[acuity_logs.csv\nCSV Logging]
+  A --> D[extract_pdf.py\nReport Export]
+  A --> E[test_*.py\nUnit Tests]
+  B --> E
+  style A fill:#f9f,stroke:#333,stroke-width:2px
+  style B fill:#bbf,stroke:#333,stroke-width:2px
+  style C fill:#bfb,stroke:#333,stroke-width:2px
+  style D fill:#ffd,stroke:#333,stroke-width:2px
+  style E fill:#eee,stroke:#333,stroke-width:2px
+```
+
 ## 4. Implementation Details
 
 ### Optotype Geometry
@@ -102,3 +130,4 @@ python main.py
 - **Contrast Control**: Variable luminance for contrast sensitivity testing.
 - **Adaptive staircase algorithms**: Implementation of the *QUEST* or *PEST* protocol for faster threshold detection.
 - **Eye-chart mode**: Multiple optotype presentation for crowding effect analysis.
+
