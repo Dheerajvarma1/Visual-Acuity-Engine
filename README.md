@@ -122,6 +122,39 @@ graph TB
     end
 ```
 
+### Simple Flow
+
+```
+Keyboard Input
+      │
+      ├─ 1/2/3/4 ──────────────────► Acuity Level Switch
+      │
+      ├─ M / T / F / H ────────────► Mode Toggles
+      │
+      └─ W/A/S/D / Arrow Keys
+                │
+                ▼
+        Evaluate Response
+        (Correct / Incorrect)
+                │
+        ┌───────┴────────┐
+        │                │
+     Correct          Incorrect
+        │                │
+    Step Harder      Step Easier       ◄─── Adaptive Protocol
+        │                │
+        └───────┬─────────┘
+                │
+                ▼
+      VisualAcuityEngine
+        arcmin → rad → mm → px
+        Constraint Check (< 2px / > screen)
+        OpenCV: circle + gap rect + HUD
+                │
+                ▼
+    cv2.imshow()   +   acuity_logs.csv
+```
+
 ### Design Principles
 
 1. **Physical accuracy** — no hardcoded pixel values; all dimensions flow from `PPI` and `viewing_distance_mm`
