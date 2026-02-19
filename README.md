@@ -58,7 +58,8 @@ Stroke width = 1 × gap
 | 6/18   | 3 arcmin  | 0.0873   | 1.03     | 5.15        | Natural |
 | 6/60   | 10 arcmin | 0.2909   | 3.44     | 17.18       | Natural |
 
-> **⚠ Clamped** levels fall below the 2 px hardware limit. They are rendered at minimum visible size with a console warning — this is physically correct behaviour for this display/distance combination.
+> [!WARNING]
+> **Clamped levels** (6/6 and 6/12) fall below the 2 px hardware floor at this display/distance combination. They are rendered at minimum visible size and a console warning is printed. This is physically correct behaviour — not a bug.
 
 ---
 
@@ -124,35 +125,34 @@ graph TB
 
 ### Simple Flow
 
-```
-Keyboard Input
-      │
-      ├─ 1/2/3/4 ──────────────────► Acuity Level Switch
-      │
-      ├─ M / T / F / H ────────────► Mode Toggles
-      │
-      └─ W/A/S/D / Arrow Keys
-                │
-                ▼
-        Evaluate Response
-        (Correct / Incorrect)
-                │
-        ┌───────┴────────┐
-        │                │
-     Correct          Incorrect
-        │                │
-    Step Harder      Step Easier       ◄─── Adaptive Protocol
-        │                │
-        └───────┬─────────┘
-                │
-                ▼
-      VisualAcuityEngine
-        arcmin → rad → mm → px
-        Constraint Check (< 2px / > screen)
-        OpenCV: circle + gap rect + HUD
-                │
-                ▼
-    cv2.imshow()   +   acuity_logs.csv
+```mermaid
+flowchart TD
+    KB(["⌨ Keyboard Input"])
+
+    KB -->|"1 / 2 / 3 / 4"| ACU["Acuity Level Switch"]
+    KB -->|"M / T / F / H"| MOD["Mode Toggles"]
+    KB -->|"W A S D / Arrow Keys"| RESP["Submit Response"]
+
+    RESP --> EVAL{"Correct?"}
+    EVAL -->|"Yes"| HARDER["Step Harder"]
+    EVAL -->|"No"| EASIER["Step Easier"]
+    HARDER --> ENGINE
+    EASIER --> ENGINE
+    ACU --> ENGINE
+    MOD --> ENGINE
+
+    ENGINE["VisualAcuityEngine"]
+    ENGINE --> MATH["Math Pipeline\narcmin → rad → mm → px"]
+    MATH --> CHK{"Size OK?"}
+    CHK -->|"Too large"| SCALE["Scale down proportionally"]
+    CHK -->|"Too small (< 2px)"| CLAMP["Clamp to minimum"]
+    CHK -->|"OK"| DRAW
+    SCALE --> DRAW
+    CLAMP --> DRAW
+
+    DRAW["OpenCV Render\nLandolt C + HUD"]
+    DRAW --> WIN(["🖥 cv2.imshow()"])
+    EVAL -->|"Log trial"| LOG(["📄 acuity_logs.csv"])
 ```
 
 ### Design Principles
