@@ -26,7 +26,7 @@ The system is purpose-built for a near-eye micro-display at an optical distance 
 ## Visual Angle Calculation Pipeline
 
 > [!IMPORTANT]
-> All stimulus sizes are derived mathematically — no pixel values are hardcoded.
+> All stimulus sizes are derived mathematically, No pixel values are hardcoded.
 
 **Step 1: Arc minutes to Radians**
 ```
