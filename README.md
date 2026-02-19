@@ -27,23 +27,23 @@ The system is purpose-built for a near-eye micro-display at an optical distance 
 
 All stimulus sizes are derived mathematically — no pixel values are hardcoded.
 
-**Step 1 — Arc minutes → Radians**
+**Step 1: Arc minutes to Radians**
 ```
 θ (rad) = arcmin × π / (180 × 60)
 ```
 
-**Step 2 — Visual angle → Physical size (mm)**
+**Step 2: Visual angle to Physical size (mm)**
 ```
 gap (mm) = d × tan(θ)          [d = 100 mm]
 ```
 > Full `tan(θ)` is used rather than the small-angle approximation for maximum accuracy.
 
-**Step 3 — Physical size → Pixels**
+**Step 3: Physical size to Pixels**
 ```
 pixels = mm × (PPI / 25.4)     [PPI = 300]
 ```
 
-**Step 4 — Optotype proportions (1:5 standard)**
+**Step 4: Optotype proportions (1:5 standard)**
 ```
 Total height = 5 × gap
 Stroke width = 1 × gap
@@ -59,7 +59,7 @@ Stroke width = 1 × gap
 | 6/60   | 10 arcmin | 0.2909   | 3.44     | 17.18       | Natural |
 
 > [!WARNING]
-> **Clamped levels** (6/6 and 6/12) fall below the 2 px hardware floor at this display/distance combination. They are rendered at minimum visible size and a console warning is printed. This is physically correct behaviour — not a bug.
+> **Clamped levels** (6/6 and 6/12) fall below the 2 px hardware floor at this display/distance combination. They are rendered at minimum visible size and a console warning is printed. This is physically correct behaviour, not a bug.
 
 ---
 
@@ -157,10 +157,10 @@ flowchart TD
 
 ### Design Principles
 
-1. **Physical accuracy** — no hardcoded pixel values; all dimensions flow from `PPI` and `viewing_distance_mm`
-2. **Separation of concerns** — `VisualAcuityEngine` owns math and rendering; `main.py` owns interaction and I/O
-3. **Safety-first** — display constraint violations emit console warnings and clamp gracefully
-4. **Extensibility** — engine accepts any PPI/distance at construction; supports multiple display profiles
+1. **Physical accuracy**: no hardcoded pixel values; all dimensions flow from `PPI` and `viewing_distance_mm`
+2. **Separation of concerns**: `VisualAcuityEngine` owns math and rendering; `main.py` owns interaction and I/O
+3. **Safety-first**: display constraint violations emit console warnings and clamp gracefully
+4. **Extensibility**: engine accepts any PPI/distance at construction; supports multiple display profiles
 
 ---
 
@@ -215,18 +215,18 @@ python main.py
 ## Features
 
 ### Core
-- **Physics-correct rendering** — all sizes derived from PPI, viewing distance, and visual angle
-- **Anti-aliased Landolt C** — smooth stimulus at all sizes using `cv2.LINE_AA`
-- **4 acuity levels** — 6/6 through 6/60 (1–10 arcmin gap)
-- **4 gap orientations** — Up, Down, Left, Right (randomised per trial)
-- **Display constraint handling** — scale-down if stimulus exceeds screen; 2 px floor with console warning if too small
+- **Physics-correct rendering**: all sizes derived from PPI, viewing distance, and visual angle
+- **Anti-aliased Landolt C**: smooth stimulus at all sizes using `cv2.LINE_AA`
+- **4 acuity levels**: 6/6 through 6/60 (1–10 arcmin gap)
+- **4 gap orientations**: Up, Down, Left, Right (randomised per trial)
+- **Display constraint handling**: scale-down if stimulus exceeds screen; 2 px floor with console warning if too small
 
 ### Bonus Features
-- **Adaptive acuity** — correct response steps to a harder level; incorrect steps easier, converging toward the user's acuity threshold
-- **Randomised presentation** — orientation randomised on every trial and acuity switch
-- **Dark / Light theme** — switchable on-the-fly with `T`
-- **Fullscreen mode** — toggle with `F`
-- **HUD hide** — press `H` for a clean stimulus-only view (useful for recording)
+- **Adaptive acuity**: correct response steps to a harder level; incorrect steps easier, converging toward the user's acuity threshold
+- **Randomised presentation**: orientation randomised on every trial and acuity switch
+- **Dark / Light theme**: switchable on-the-fly with `T`
+- **Fullscreen mode**: toggle with `F`
+- **HUD hide**: press `H` for a clean stimulus-only view (useful for recording)
 
 ---
 
@@ -285,7 +285,7 @@ Visual-Acuity-Engine/
 ## Potential System Questions
 
 **What happens if viewing distance changes?**
-Pass a new `viewing_distance_mm` to `VisualAcuityEngine`. All sizes recalculate automatically — no other changes needed.
+Pass a new `viewing_distance_mm` to `VisualAcuityEngine`. All sizes recalculate automatically; no other changes needed.
 
 **How would you calibrate for a real device?**
 Measure the physical display PPI with a test pattern, verify the optical path length, and update those two constructor parameters. The rest of the pipeline is invariant.
