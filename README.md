@@ -245,13 +245,13 @@ All responses are automatically appended to `acuity_logs.csv`:
 
 ### Sample Output
 
-```csv
-2026-02-20 03:17:16,6/6,Left,Left,Correct,Adaptive
-2026-02-20 03:17:16,6/6,Up,Up,Correct,Adaptive
-2026-02-20 03:17:17,6/6,Up,Up,Correct,Adaptive
-2026-02-20 03:17:17,6/6,Left,Left,Correct,Adaptive
-2026-02-20 03:17:18,6/6,Right,Right,Correct,Adaptive
-```
+| Timestamp | Acuity Level | True Orientation | User Response | Result | Mode |
+|:---|:---|:---|:---|:---|:---|
+| 2026-02-20 03:17:16 | 6/6 | Left | Left | Correct | Adaptive |
+| 2026-02-20 03:17:16 | 6/6 | Up | Up | Correct | Adaptive |
+| 2026-02-20 03:17:17 | 6/6 | Up | Up | Correct | Adaptive |
+| 2026-02-20 03:17:17 | 6/6 | Left | Left | Correct | Adaptive |
+| 2026-02-20 03:17:18 | 6/6 | Right | Right | Correct | Adaptive |
 
 ---
 
