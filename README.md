@@ -25,7 +25,8 @@ The system is purpose-built for a near-eye micro-display at an optical distance 
 
 ## Visual Angle Calculation Pipeline
 
-All stimulus sizes are derived mathematically — no pixel values are hardcoded.
+> [!IMPORTANT]
+> All stimulus sizes are derived mathematically — no pixel values are hardcoded.
 
 **Step 1: Arc minutes to Radians**
 ```
@@ -157,10 +158,12 @@ flowchart TD
 
 ### Design Principles
 
-1. **Physical accuracy**: no hardcoded pixel values; all dimensions flow from `PPI` and `viewing_distance_mm`
-2. **Separation of concerns**: `VisualAcuityEngine` owns math and rendering; `main.py` owns interaction and I/O
-3. **Safety-first**: display constraint violations emit console warnings and clamp gracefully
-4. **Extensibility**: engine accepts any PPI/distance at construction; supports multiple display profiles
+> [!TIP]
+> **Design Philosophy**
+> 1. **Physical accuracy**: no hardcoded pixel values; all dimensions flow from `PPI` and `viewing_distance_mm`
+> 2. **Separation of concerns**: `VisualAcuityEngine` owns math and rendering; `main.py` owns interaction and I/O
+> 3. **Safety-first**: display constraint violations emit console warnings and clamp gracefully
+> 4. **Extensibility**: engine accepts any PPI/distance at construction; supports multiple display profiles
 
 ---
 
@@ -175,6 +178,9 @@ git clone https://github.com/Dheerajvarma1/Visual-Acuity-Engine.git
 ```bash
 pip install -r requirements.txt
 ```
+
+> [!NOTE]
+> Ensure you have Python 3.8+ installed before proceeding.
 
 **3. Run**
 ```bash
@@ -207,6 +213,7 @@ python main.py
 | `M` | Toggle Adaptive Mode ON / OFF |
 | `T` | Toggle Dark / Light theme |
 | `F` | Toggle Fullscreen / Windowed |
+| `C` | Toggle Chart Mode (Multiple optotypes) |
 | `H` | Hide / Show HUD labels |
 | `ESC` | Exit |
 
@@ -226,6 +233,7 @@ python main.py
 - **Randomised presentation**: orientation randomised on every trial and acuity switch
 - **Dark / Light theme**: switchable on-the-fly with `T`
 - **Fullscreen mode**: toggle with `F`
+- **Chart Mode**: press `C` to view a multi-optotype acuity chart (rows of random orientations)
 - **HUD hide**: press `H` for a clean stimulus-only view (useful for recording)
 
 ---
@@ -256,6 +264,9 @@ All responses are automatically appended to `acuity_logs.csv`:
 ---
 
 ## Project Structure
+
+> [!CAUTION]
+> **Web Scraping / Automation**: This engine is designed for human interaction. Automated testing scripts should respect the 2px minimum visibility constraint to avoid false negatives.
 
 ```
 Visual-Acuity-Engine/

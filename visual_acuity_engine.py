@@ -174,6 +174,109 @@ class VisualAcuityEngine:
 
         return canvas, warning
 
+    def _draw_single_c(self, canvas, center, height_px, gap_px, orientation, color, bg_color):
+        """Helper to draw a single Landolt C."""
+        cx, cy = center
+        outer_radius = height_px / 2.0
+        inner_radius = outer_radius * 0.6
+        
+        # 1. Full circle
+        cv2.circle(canvas, (cx, cy), int(outer_radius), color, -1, lineType=cv2.LINE_AA)
+        
+        # 2. Inner hole
+        cv2.circle(canvas, (cx, cy), int(inner_radius), bg_color, -1, lineType=cv2.LINE_AA)
+        
+        # 3. Gap
+        gap_w = gap_px
+        gap_h = outer_radius + 2
+        
+        # Define rectangle centered at (0,0)
+        pts = np.array([
+            [0, -gap_w/2],
+            [gap_h, -gap_w/2],
+            [gap_h, gap_w/2],
+            [0, gap_w/2]
+        ])
+        
+        # Rotate
+        angle = 0
+        if orientation == 'Up': angle = -90
+        elif orientation == 'Down': angle = 90
+        elif orientation == 'Left': angle = 180
+        elif orientation == 'Right': angle = 0
+            
+        theta = np.radians(angle)
+        c, s = np.cos(theta), np.sin(theta)
+        R = np.array(((c, -s), (s, c)))
+        
+        rotated_pts = pts.dot(R.T)
+        rotated_pts[:, 0] += cx
+        rotated_pts[:, 1] += cy
+        
+        # Draw gap
+        cv2.fillPoly(canvas, [rotated_pts.astype(np.int32)], bg_color, lineType=cv2.LINE_AA)
+
+    def render_chart_mode(self, dark_mode=False, hide_hud=False):
+        """Renders a multi-optotype chart with rows of decreasing size."""
+        # Colors
+        if dark_mode:
+            bg_color = (0, 0, 0); text_color = (255, 255, 255); hint_color = (100, 100, 100)
+        else:
+            bg_color = (255, 255, 255); text_color = (0, 0, 0); hint_color = (180, 180, 180)
+            
+        canvas = np.full((self.resolution[1], self.resolution[0], 3), bg_color, dtype=np.uint8)
+        
+        # Define rows: (Acuity Key, Y-position, Count)
+        # 6/60 (Key '4'), 6/18 ('3'), 6/12 ('2'), 6/6 ('1')
+        rows = [
+            ('4', 150, 2), 
+            ('3', 280, 3), 
+            ('2', 380, 4), 
+            ('1', 460, 5)
+        ]
+        
+        import random
+        orientations = ['Up', 'Down', 'Left', 'Right']
+        
+        for key, y_pos, count in rows:
+            name = self.acuity_levels[key][0]
+            arcmin = self.acuity_levels[key][1]
+            gap_px, height_px = self.calculate_sizes_px(arcmin)
+            
+            # Clamp logic (same as main renderer to ensure visibility)
+            if height_px < 2.0:
+                scale = 2.0 / height_px
+                height_px = 2.0
+                gap_px = gap_px * scale
+            
+            # Spacing
+            total_width = self.resolution[0]
+            spacing = total_width / (count + 1)
+            
+            for i in range(count):
+                x_pos = int(spacing * (i + 1))
+                ori = random.choice(orientations)
+                self._draw_single_c(canvas, (x_pos, y_pos), height_px, gap_px, ori, text_color, bg_color)
+            
+            # Draw row label
+            if not hide_hud:
+                cv2.putText(canvas, name, (int(spacing * count) + 60, y_pos + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.4, hint_color, 1)
+
+        if not hide_hud:
+             mode_title = "[ CHART MODE ]"
+             cv2.putText(canvas, mode_title, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, text_color, 2)
+             
+             # Theme indicator
+             theme_label = "[ THEME: DARK ]" if dark_mode else "[ THEME: LIGHT ]"
+             cv2.putText(canvas, theme_label, (620, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, hint_color, 1)
+             
+             cv2.putText(canvas,
+                        "C (Switch Mode) | T (Theme) | F (Fullscreen) | H (Hide HUD) | ESC (Exit)",
+                        (10, self.resolution[1] - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.36, hint_color, 1)
+                        
+        return canvas
+
 if __name__ == "__main__":
     # Test
     engine = VisualAcuityEngine()

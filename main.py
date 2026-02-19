@@ -35,6 +35,7 @@ def main():
     dark_mode = False                   # Toggle with 'T' (starts light)
     fullscreen = False                  # Toggle with 'F'
     hide_hud = False                    # Toggle with 'H'
+    chart_mode = False                  # Toggle with 'C' (starts in single mode)
     log_file = 'acuity_logs.csv'
 
     # Create window (WINDOW_NORMAL allows resizing and fullscreen)
@@ -58,9 +59,13 @@ def main():
 
     while True:
         # Render
-        canvas, warning = engine.render_landolt_c(
-            current_acuity_key, current_orientation, adaptive_mode, dark_mode, hide_hud
-        )
+        if chart_mode:
+            canvas = engine.render_chart_mode(dark_mode, hide_hud)
+            warning = None
+        else:
+            canvas, warning = engine.render_landolt_c(
+                current_acuity_key, current_orientation, adaptive_mode, dark_mode, hide_hud
+            )
         if warning:
             print(warning)
 
@@ -102,6 +107,12 @@ def main():
             print(f"HUD: {'Hidden' if hide_hud else 'Visible'}")
             continue
 
+        # Toggle Chart Mode with 'C'
+        if key == ord('c') or key == ord('C'):
+            chart_mode = not chart_mode
+            print(f"Chart Mode: {'ON' if chart_mode else 'OFF'}")
+            continue
+
         # Manual acuity switching (disables adaptive for that pick)
         if ord('1') <= key <= ord('4'):
             current_acuity_key = chr(key)
@@ -110,6 +121,10 @@ def main():
             continue
 
         # Response handling — WASD and Arrow keys
+        if chart_mode:
+             # In chart mode, we don't log individual responses as there are multiple optotypes
+             continue
+
         user_response = None
         # Arrow key codes returned by cv2.waitKeyEx() on Windows:
         # Up=2490368, Down=2621440, Left=2424832, Right=2555904
