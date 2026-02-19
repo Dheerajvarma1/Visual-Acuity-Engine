@@ -47,10 +47,13 @@ class VisualAcuityEngine:
         
         return gap_px, height_px
 
-    def render_landolt_c(self, acuity_key, orientation):
+    def render_landolt_c(self, acuity_key, orientation, adaptive_mode=False, dark_mode=False, hide_hud=False):
         """
         Render the Landolt C optotype on a canvas.
         Orientation: 'Up', 'Down', 'Left', 'Right'
+        adaptive_mode: If True, display adaptive indicator on HUD.
+        dark_mode: If True, white C on black; else black C on white.
+        hide_hud: If True, hide acuity/orientation/adaptive labels (clean view).
         """
         if acuity_key not in self.acuity_levels:
             return None, "Invalid Acuity Level"
@@ -67,17 +70,30 @@ class VisualAcuityEngine:
             gap_px = gap_px * scale
             warning = f"Warning: {name} stimulus exceeds screen size, scaled down."
             
-        if height_px < 5.0:
-            # If size is very small, display minimum visible size (5px height)
-            # and warn in console.
-            # 5px height allows for 1px gap and 1px stroke.
-            scale = 5.0 / height_px
-            height_px = 5.0
+        if height_px < 2.0:
+            scale = 2.0 / height_px
+            height_px = 2.0
             gap_px = gap_px * scale
-            warning = f"Warning: {name} stimulus size very small (calculated height {5.0 / scale:.2f}px < 5px), using minimum visible size (5px)."
+            warning = f"Warning: {name} stimulus size very small (calculated height {2.0 / scale:.2f}px < 2px), using minimum visible size."
 
-        # Create canvas (White background)
-        canvas = np.ones((self.resolution[1], self.resolution[0], 3), dtype=np.uint8) * 255
+        # Theme colors
+        if dark_mode:
+            bg_color      = (0, 0, 0)        # Black background
+            ring_color    = (255, 255, 255)  # White C
+            hole_color    = (0, 0, 0)        # Black hole
+            gap_color     = (0, 0, 0)        # Black gap
+            text_color    = (255, 255, 255)  # White text
+            hint_color    = (160, 160, 160)  # Light grey hint
+        else:
+            bg_color      = (255, 255, 255)  # White background
+            ring_color    = (0, 0, 0)        # Black C
+            hole_color    = (255, 255, 255)  # White hole
+            gap_color     = (255, 255, 255)  # White gap
+            text_color    = (0, 0, 0)        # Black text
+            hint_color    = (100, 100, 100)  # Dark grey hint
+
+        # Create canvas
+        canvas = np.full((self.resolution[1], self.resolution[0], 3), bg_color, dtype=np.uint8)
         
         # Center coordinates
         center_x, center_y = self.resolution[0] // 2, self.resolution[1] // 2
@@ -90,8 +106,8 @@ class VisualAcuityEngine:
         stroke = int(round(gap_px))
         
         # Draw the ring
-        cv2.circle(canvas, (center_x, center_y), outer_radius, (0, 0, 0), -1, lineType=cv2.LINE_AA)
-        cv2.circle(canvas, (center_x, center_y), inner_radius, (255, 255, 255), -1, lineType=cv2.LINE_AA)
+        cv2.circle(canvas, (center_x, center_y), outer_radius, ring_color, -1, lineType=cv2.LINE_AA)
+        cv2.circle(canvas, (center_x, center_y), inner_radius, hole_color, -1, lineType=cv2.LINE_AA)
         
         # Draw the gap
         # The gap is a rectangle of width 'stroke' and extends from center to outer edge
@@ -131,14 +147,30 @@ class VisualAcuityEngine:
         rotated_pts = pts @ rot_matrix.T
         rotated_pts = rotated_pts + [center_x, center_y]
         
-        # Draw the white gap
-        cv2.fillPoly(canvas, [rotated_pts.astype(np.int32)], (255, 255, 255), lineType=cv2.LINE_AA)
-        
-        # Labels
-        cv2.putText(canvas, f"Acuity: {name}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-        cv2.putText(canvas, f"Orientation: {orientation}", (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-        cv2.putText(canvas, "Keys: 1-4 (Acuity), W/A/S/D (Response), ESC (Exit)", (20, self.resolution[1] - 20), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1)
+        # Draw the gap
+        cv2.fillPoly(canvas, [rotated_pts.astype(np.int32)], gap_color, lineType=cv2.LINE_AA)
+
+        # Top HUD labels (hidden when hide_hud=True)
+        if not hide_hud:
+            cv2.putText(canvas, f"Acuity: {name}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, text_color, 2)
+            cv2.putText(canvas, f"Orientation: {orientation}", (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, text_color, 2)
+
+            # Adaptive mode badge
+            mode_label = "[ ADAPTIVE MODE: ON ]"
+            mode_color = (0, 220, 0) if dark_mode else (0, 150, 0)
+            if not adaptive_mode:
+                mode_label = "[ ADAPTIVE MODE: OFF ]"
+                mode_color = hint_color
+            cv2.putText(canvas, mode_label, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2)
+
+        # Theme indicator (always visible)
+        theme_label = "[ THEME: DARK ]" if dark_mode else "[ THEME: LIGHT ]"
+        cv2.putText(canvas, theme_label, (620, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, hint_color, 1)
+
+        cv2.putText(canvas,
+                    "1-4 (Acuity) | W/A/S/D/Arrows (Respond) | M (Adaptive) | T (Theme) | F (Fullscreen) | H (Hide HUD) | ESC (Exit)",
+                    (10, self.resolution[1] - 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.36, hint_color, 1)
 
         return canvas, warning
 

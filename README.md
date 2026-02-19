@@ -1,161 +1,198 @@
-# Visual Acuity Stimulus Engine: Landolt C Framework
-
-## Executive Summary
-The **Visual Acuity Stimulus Engine (VASE)** is a high-precision rendering framework developed for head-mounted visual testing systems. Designed for near-eye micro-displays (optical distance ~100mm), VASE translates standard clinical visual acuity requirements into mathematically accurate digital stimuli using visual-angle geometry.
-
-> [!IMPORTANT]
-> This system is designed for a medical device context where stimulus accuracy and consistent calibration are paramount.
+# Visual Acuity Stimulus Engine
+### Landolt C Optotype Renderer for Near-Eye Micro-Displays
 
 ---
 
-## 1. Domain Context & Problem Definition
-Traditional visual acuity tests (like the Snellen chart) are often static and non-adaptive. In the context of Head-Mounted Displays (HMDs), clinical testing requires:
-- **Dynamic Scaling**: Stimuli must adapt to specific hardware parameters (PPI, viewing distance).
-- **Sub-pixel Accuracy**: At high acuity levels (6/6), stimuli gaps can be smaller than a single physical pixel.
-- **Controlled Interaction**: Logging of user response against "Ground Truth" for adaptive testing logic.
+## Overview
 
-VASE addresses these by decoupled stimulus math from the rendering layer, ensuring that physics-based requirements drive the visual output.
+The **Visual Acuity Stimulus Engine (VASE)** is a Python-based clinical stimulus rendering system designed for head-mounted visual testing hardware. It generates **Landolt C optotypes** at precise, physics-correct sizes using visual-angle geometry — with no hardcoded pixel values.
+
+The system is purpose-built for a near-eye micro-display at an optical distance of **100 mm**, simulating the environment of a wearable vision testing device.
 
 ---
 
-## 2. System Objectives & Scope
-The primary objective is to render a mathematically correct **Landolt C** optotype that subtends precise angles at the fovea.
+## System Specifications
 
-### In Scope
-- Calculation of visual angle $\theta$ based on Snellen-equivalent acuity levels (6/6 to 6/60).
-- Real-time rendering with anti-aliasing to mitigate pixelation artifacts.
-- Automated CSV logging for clinical data collection.
-- Safety-first clamping for stimuli that fall below hardware resolution thresholds.
-
----
-
-## 3. Technical Architecture
-
-### 3.1 Design Principles
-1. **Physical Accuracy**: No hardcoded pixel values. All dimensions are derived from distance and PPI.
-2. **Modular Decoupling**: Separation of the `VisualAcuityEngine` (math/logic) from the `AppManager` (interaction/IO).
-3. **Safety Through Admonition**: Console-level warnings when stimulus integrity is compromised by hardware limits.
-
-### 3.2 The Visual Angle Pipeline
-The engine follows a three-stage transformation pipeline:
-
-1.  **Acuity to Radians**: $\theta_{rad} = \text{arcmin} \times \frac{\pi}{180 \times 60}$
-2.  **Visual Angle to Physical Size (mm)**: $\text{gap}_{mm} = d \times \tan(\theta_{rad})$
-3.  **Physical Size to Raster Pixels**: $\text{pixels} = \text{gap}_{mm} \times \frac{PPI}{25.4}$
-
-> [!NOTE]
-> While a small-angle approximation ($\tan(\theta) \approx \theta$) is common in clinical software, VASE utilizes the full tangent function to ensure maximum accuracy across a broader range of visual distances.
-
-### 3.3 Hardware Assumptions
-| Parameter | Value | Description |
-| :--- | :--- | :--- |
-| **Viewing Distance** | 100 mm | Optical path from eye to display. |
-| **Display PPI** | 300 | Pixels Per Inch (Density). |
-| **Output Resolution** | 800 × 600 px | Restricted small-display simulation. |
+| Parameter | Value |
+|:---|:---|
+| Optical viewing distance | 100 mm |
+| Display PPI | 300 |
+| Output resolution | 800 × 600 px |
+| Rendering library | OpenCV (cv2) |
+| Language | Python 3.8+ |
 
 ---
 
-## Repository Structure of files
+## Visual Angle Calculation Pipeline
 
-- `acuity_logs.csv`: Sample/recorded session logs (CSV output).
-- `extract_pdf.py`: PDF extraction/ report export utility.
-- `main.py`: Application entrypoint / CLI and session orchestration.
-- `visual_acuity_engine.py`: Core engine implementing stimulus math and rendering.
-- `test_calculations.py`: Unit tests for calculation and geometry functions.
-- `test_logging.py`: Unit tests for logging, CSV output and IO.
-- `requirements.txt`: Python dependency list.
-- `README.md`: Project documentation (this file).
-- `__pycache__/`: Python bytecode cache (ignored in VCS).
+All stimulus sizes are derived mathematically — no pixel values are hardcoded.
 
-## High-Level Architecture
-
-The engine is structured into three distinct layers to ensure separation of concerns between physical math, user interaction, and data persistence.
-
-```mermaid
-graph TD
-    subgraph UI_Layer [User Interface & Orchestration]
-        Main[main.py: AppManager]
-    end
-
-    subgraph Logic_Layer [Core Engine & Physics]
-        Engine[visual_acuity_engine.py: VisualAcuityEngine]
-        Math[Stimulus Math & Geometry]
-    end
-
-    subgraph Data_Layer [Data & Reporting]
-        Logs[(acuity_logs.csv)]
-        PDF[extract_pdf.py: PDF Export]
-    end
-
-    subgraph Test_Layer [Verification]
-        Tests[test_*.py: Unit Tests]
-    end
-
-    Main -->|Invokes| Engine
-    Engine --- Math
-    Main -->|Writes| Logs
-    Main -->|Triggers| PDF
-    Main -.->|Verified by| Tests
-    Engine -.->|Verified by| Tests
-
-    %% Styling
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:#333;
-    classDef primary fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#333;
-    classDef secondary fill:#f3e5f5,stroke:#4a148c,stroke-width:1px,color:#333;
-    
-    class Main,Engine primary;
-    class Logs,PDF secondary;
+**Step 1 — Arc minutes → Radians**
+```
+θ (rad) = arcmin × π / (180 × 60)
 ```
 
-1.  **UI Layer**: Handles the OpenCV window lifecycle, keyboard input, and trial orchestration.
-2.  **Logic Layer**: Performs the high-precision translation from clinical acuity (Snellen) to physical sub-pixel coordinates.
-3.  **Data Layer**: Manages the persistent record of clinical trials and administrative report generation.
+**Step 2 — Visual angle → Physical size (mm)**
+```
+gap (mm) = d × tan(θ)          [d = 100 mm]
+```
+> Full `tan(θ)` is used rather than the small-angle approximation for maximum accuracy.
 
-## 4. Implementation Details
+**Step 3 — Physical size → Pixels**
+```
+pixels = mm × (PPI / 25.4)     [PPI = 300]
+```
 
-### Optotype Geometry
-The Landolt C is rendered following the **1:5 ratio** standard:
-- **Stroke Width ($s$)** = Gap Size ($g$)
-- **Total Height ($D$)** = $5 \times g$
+**Step 4 — Optotype proportions (1:5 standard)**
+```
+Total height = 5 × gap
+Stroke width = 1 × gap
+```
 
-### Rendering Strategy
-VASE utilizes OpenCV's `LINE_AA` (Anti-Aliasing) for all polygon and circle fills. This is critical for 6/6 and 6/12 levels where the calculated gap size is $< 1.0$ px, as it allows for sub-pixel intensity variation that better simulates the intended visual angle on high-density displays.
+### Calculated Sizes at 100 mm / 300 PPI
+
+| Acuity | Gap Angle | Gap (mm) | Gap (px) | Height (px) | Rendered |
+|:-------|:----------|:---------|:---------|:------------|:---------|
+| 6/6    | 1 arcmin  | 0.0291   | 0.34     | 1.72        | ⚠ Clamped |
+| 6/12   | 2 arcmin  | 0.0582   | 0.69     | 3.44        | ⚠ Clamped |
+| 6/18   | 3 arcmin  | 0.0873   | 1.03     | 5.15        | Natural |
+| 6/60   | 10 arcmin | 0.2909   | 3.44     | 17.18       | Natural |
+
+> **⚠ Clamped** levels fall below the 2 px hardware limit. They are rendered at minimum visible size with a console warning — this is physically correct behaviour for this display/distance combination.
 
 ---
 
-## 5. Operational Guide
+## Installation
 
-### Prerequisites
-- Python 3.8+
-- Dependencies: `opencv-python`, `numpy`
+**1. Clone the repository**
+```bash
+git clone <repo-url>
+cd trail2
+```
 
-### Launching the System
+**2. Create and activate environment**
+```bash
+conda activate Jobb
+# or
+pip install -r requirements.txt
+```
+
+**3. Run**
 ```bash
 python main.py
 ```
 
-### Interactive Controls
-| Key | Action | Clinical Purpose |
-| :--- | :--- | :--- |
-| **1 - 4** | Switch Acuity Level | Incremental testing (6/6, 6/12, 6/18, 6/60). |
-| **W, A, S, D** | Submit Response | Input perceived gap (Up, Left, Down, Right). |
-| **ESC** | Terminate Session | Safe exit and log finalization. |
+---
+
+## Controls
+
+### Acuity Level Selection
+| Key | Acuity | Gap Angle |
+|:----|:-------|:----------|
+| `1` | 6/6    | 1 arcmin  |
+| `2` | 6/12   | 2 arcmin  |
+| `3` | 6/18   | 3 arcmin  |
+| `4` | 6/60   | 10 arcmin |
+
+### Response Input
+| Key | Direction |
+|:----|:----------|
+| `W` or `↑` | Up    |
+| `S` or `↓` | Down  |
+| `A` or `←` | Left  |
+| `D` or `→` | Right |
+
+### System Controls
+| Key | Action |
+|:----|:-------|
+| `M` | Toggle Adaptive Mode ON / OFF |
+| `T` | Toggle Dark / Light theme |
+| `F` | Toggle Fullscreen / Windowed |
+| `H` | Hide / Show HUD labels |
+| `ESC` | Exit |
 
 ---
 
-## 6. Safety & Limitations
+## Features
 
-> [!WARNING]
-> **Hardware Resolution Floor**: At 300 PPI and 100mm distance, the 6/6 acuity level gap is calculated at **0.34 pixels**. On standard digital displays, this is physically impossible to render with absolute fidelity.
+### Core
+- **Physics-correct rendering** — all sizes derived from PPI, viewing distance, and visual angle
+- **Anti-aliased Landolt C** — smooth stimulus at all sizes using `cv2.LINE_AA`
+- **4 acuity levels** — 6/6 through 6/60 (1–10 arcmin gap)
+- **4 gap orientations** — Up, Down, Left, Right (randomised per trial)
+- **Display constraint handling** — scale-down if stimulus exceeds screen; 2 px floor with console warning if too small
 
-### Safety Handling
-- **Minimum Stimulus Size**: VASE enforces a **5.0 px height** minimum. If a stimulus falls below this, it is scaled up to 5px (the smallest size providing a 1px gap/stroke) and a warning is triggered.
-- **Proportional Scaling**: If a stimulus exceeds 800px (e.g., at extremely long distances), it is scaled down to fit the foveal region of the display.
+### Bonus Features
+- **Adaptive acuity** — correct response steps to a harder level; incorrect steps easier, converging toward the user's acuity threshold
+- **Randomised presentation** — orientation randomised on every trial and acuity switch
+- **Dark / Light theme** — switchable on-the-fly with `T`
+- **Fullscreen mode** — toggle with `F`
+- **HUD hide** — press `H` for a clean stimulus-only view (useful for recording)
 
 ---
 
-## 7. Future Roadmap
-- **Contrast Control**: Variable luminance for contrast sensitivity testing.
-- **Adaptive staircase algorithms**: Implementation of the *QUEST* or *PEST* protocol for faster threshold detection.
-- **Eye-chart mode**: Multiple optotype presentation for crowding effect analysis.
+## Response Logging
 
+All responses are automatically appended to `acuity_logs.csv`:
+
+| Column | Description |
+|:-------|:------------|
+| `Timestamp` | ISO datetime of the trial |
+| `Acuity Level` | e.g. `6/6` |
+| `True Orientation` | Ground-truth gap direction |
+| `User Response` | Submitted direction |
+| `Result` | `Correct` / `Incorrect` |
+| `Mode` | `Adaptive` / `Manual` |
+
+---
+
+## Project Structure
+
+```
+trail2/
+├── visual_acuity_engine.py   # Core engine: math, rendering, constraint handling
+├── main.py                   # Application loop, input handling, CSV logging
+├── explanation.md            # Technical write-up: math, assumptions, pixel table
+├── acuity_logs.csv           # Auto-generated trial log
+├── requirements.txt          # Python dependencies
+└── README.md                 # This file
+```
+
+---
+
+## Design Decisions
+
+| Decision | Rationale |
+|:---------|:----------|
+| `tan(θ)` over small-angle approximation | More accurate; negligible performance cost |
+| 2 px minimum height floor | Spec requirement; anything smaller is a single aliased pixel |
+| Stroke = gap width | Standard clinical Landolt C proportions (1:5 ratio) |
+| `cv2.waitKeyEx()` | Required for reliable extended key (arrow) detection on Windows |
+| Modular engine class | Decouples rendering maths from application logic for reusability |
+
+---
+
+## Potential System Questions
+
+**What happens if viewing distance changes?**
+Pass a new `viewing_distance_mm` to `VisualAcuityEngine`. All sizes recalculate automatically — no other changes needed.
+
+**How would you calibrate for a real device?**
+Measure the physical display PPI with a test pattern, verify the optical path length, and update those two constructor parameters. The rest of the pipeline is invariant.
+
+**How would you support different displays?**
+`VisualAcuityEngine` accepts `display_ppi` and `resolution` as constructor arguments. Each display profile can be instantiated independently.
+
+---
+
+## Dependencies
+
+```
+opencv-python
+numpy
+```
+
+Install via:
+```bash
+pip install -r requirements.txt
+```
