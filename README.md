@@ -168,14 +168,11 @@ flowchart TD
 
 **1. Clone the repository**
 ```bash
-git clone <repo-url>
-cd trail2
+git clone https://github.com/Dheerajvarma1/Visual-Acuity-Engine.git
 ```
 
 **2. Create and activate environment**
 ```bash
-conda activate Jobb
-# or
 pip install -r requirements.txt
 ```
 
@@ -246,12 +243,22 @@ All responses are automatically appended to `acuity_logs.csv`:
 | `Result` | `Correct` / `Incorrect` |
 | `Mode` | `Adaptive` / `Manual` |
 
+### Sample Output
+
+```csv
+2026-02-20 03:17:16,6/6,Left,Left,Correct,Adaptive
+2026-02-20 03:17:16,6/6,Up,Up,Correct,Adaptive
+2026-02-20 03:17:17,6/6,Up,Up,Correct,Adaptive
+2026-02-20 03:17:17,6/6,Left,Left,Correct,Adaptive
+2026-02-20 03:17:18,6/6,Right,Right,Correct,Adaptive
+```
+
 ---
 
 ## Project Structure
 
 ```
-trail2/
+Visual-Acuity-Engine/
 ├── visual_acuity_engine.py   # Core engine: math, rendering, constraint handling
 ├── main.py                   # Application loop, input handling, CSV logging
 ├── explanation.md            # Technical write-up: math, assumptions, pixel table
@@ -271,6 +278,7 @@ trail2/
 | Stroke = gap width | Standard clinical Landolt C proportions (1:5 ratio) |
 | `cv2.waitKeyEx()` | Required for reliable extended key (arrow) detection on Windows |
 | Modular engine class | Decouples rendering maths from application logic for reusability |
+| **Central Rendering** | Stimulus is rendered at `(width/2, height/2)`, satisfying the "central region only" requirement for near-eye displays |
 
 ---
 

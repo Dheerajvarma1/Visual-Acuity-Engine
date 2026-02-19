@@ -163,14 +163,14 @@ class VisualAcuityEngine:
                 mode_color = hint_color
             cv2.putText(canvas, mode_label, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.55, mode_color, 2)
 
-        # Theme indicator (always visible)
-        theme_label = "[ THEME: DARK ]" if dark_mode else "[ THEME: LIGHT ]"
-        cv2.putText(canvas, theme_label, (620, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, hint_color, 1)
+            # Theme indicator (always visible unless hidden)
+            theme_label = "[ THEME: DARK ]" if dark_mode else "[ THEME: LIGHT ]"
+            cv2.putText(canvas, theme_label, (620, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, hint_color, 1)
 
-        cv2.putText(canvas,
-                    "1-4 (Acuity) | W/A/S/D/Arrows (Respond) | M (Adaptive) | T (Theme) | F (Fullscreen) | H (Hide HUD) | ESC (Exit)",
-                    (10, self.resolution[1] - 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.36, hint_color, 1)
+            cv2.putText(canvas,
+                        "1-4 (Acuity) | W/A/S/D/Arrows (Respond) | M (Adaptive) | T (Theme) | F (Fullscreen) | H (Hide HUD) | ESC (Exit)",
+                        (10, self.resolution[1] - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.36, hint_color, 1)
 
         return canvas, warning
 
