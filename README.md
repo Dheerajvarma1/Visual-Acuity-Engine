@@ -62,6 +62,75 @@ Stroke width = 1 × gap
 
 ---
 
+## System Architecture
+
+### Component Overview
+
+```mermaid
+graph TB
+    subgraph INPUT["Input Layer (main.py)"]
+        KB["Keyboard — cv2.waitKeyEx()"]
+        KB -->|"1-4"| ACU["Acuity Selector"]
+        KB -->|"W/A/S/D / Arrows"| RESP["Response Handler"]
+        KB -->|"M / T / F / H"| TOGGLE["Mode Toggles\n(Adaptive · Theme · Fullscreen · HUD)"]
+    end
+
+    subgraph STATE["State Manager (main.py)"]
+        ACU --> SM["current_acuity_key\ncurrent_orientation\nadaptive_mode\ndark_mode\nfullscreen\nhide_hud"]
+        TOGGLE --> SM
+    end
+
+    subgraph ADAPTIVE["Adaptive Protocol (main.py)"]
+        RESP -->|"submit direction"| EVAL["Evaluate Response\n(Correct / Incorrect)"]
+        EVAL -->|"Correct → step harder"| STEP["step_acuity()"]
+        EVAL -->|"Incorrect → step easier"| STEP
+        STEP --> SM
+    end
+
+    subgraph ENGINE["VisualAcuityEngine (visual_acuity_engine.py)"]
+        SM -->|"acuity_key + orientation + modes"| MATH
+
+        subgraph MATH["Math Pipeline"]
+            A1["arcmin_to_rad()\nθ = arcmin × π / 10800"]
+            A2["visual_angle_to_mm()\ngap = d × tan(θ)"]
+            A3["mm_to_pixels()\npx = mm × PPI / 25.4"]
+            A4["calculate_sizes_px()\nheight = 5 × gap"]
+            A1 --> A2 --> A3 --> A4
+        end
+
+        subgraph CONSTRAINTS["Constraint Handling"]
+            C1{"height > screen?"}
+            C2{"height < 2px?"}
+            C1 -->|"Yes → scale down"| WARN1["⚠ Console Warning"]
+            C2 -->|"Yes → clamp to min"| WARN2["⚠ Console Warning"]
+        end
+
+        subgraph RENDER["OpenCV Renderer"]
+            R1["np.zeros / np.full\n(black or white canvas)"]
+            R2["cv2.circle × 2\n(outer ring + inner hole)"]
+            R3["cv2.fillPoly\n(gap rectangle, rotated)"]
+            R4["cv2.putText\n(HUD labels)"]
+            R1 --> R2 --> R3 --> R4
+        end
+
+        MATH --> CONSTRAINTS --> RENDER
+    end
+
+    subgraph OUTPUT["Output Layer"]
+        RENDER -->|"canvas (numpy array)"| DISP["cv2.imshow()\n800×600 window"]
+        EVAL -->|"per trial"| CSV["acuity_logs.csv\nTimestamp · Acuity · Orientation\nResponse · Result · Mode"]
+    end
+```
+
+### Design Principles
+
+1. **Physical accuracy** — no hardcoded pixel values; all dimensions flow from `PPI` and `viewing_distance_mm`
+2. **Separation of concerns** — `VisualAcuityEngine` owns math and rendering; `main.py` owns interaction and I/O
+3. **Safety-first** — display constraint violations emit console warnings and clamp gracefully
+4. **Extensibility** — engine accepts any PPI/distance at construction; supports multiple display profiles
+
+---
+
 ## Installation
 
 **1. Clone the repository**
